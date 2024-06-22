@@ -1,14 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar';
+import Swal from 'sweetalert2';
 
 export const Horario = () => {
   const { logout } = useContext(AuthContext);
   const [hora, setHora] = useState('');
   const [fecha, setFecha] = useState('');
-
   const [horarios, setHorarios] = useState(null);
-  
+
   useEffect(() => {
     getTurnos();
   }, []);
@@ -23,7 +23,7 @@ export const Horario = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:3000/api/turnos', {
+      const response = await fetch('http://localhost:3000/api/turnos/cancelar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -41,6 +41,53 @@ export const Horario = () => {
     } catch (error) {
       console.error('Error al guardar el turno:', error.message);
     }
+  };
+
+  const handleCancelarReserva = async (turno) => {
+    const { fecha, hora, cliente, medioDePago } = turno;
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: `Cancelar el turno de ${cliente || 'Cliente'} en la fecha ${fecha} a las ${hora}.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No, mantener',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch('http://localhost:3000/api/turnos/cancelar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fecha, hora })
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al cancelar la reserva');
+          }
+
+          const resultado = await response.json();
+          console.log('Reserva cancelada:', resultado);
+
+          Swal.fire(
+            '¡Cancelado!',
+            'El turno ha sido cancelado.',
+            'success'
+          );
+
+          getTurnos();
+        } catch (error) {
+          console.error('Error al cancelar la reserva:', error.message);
+
+          Swal.fire(
+            'Error',
+            'Hubo un problema al cancelar el turno.',
+            'error'
+          );
+        }
+      }
+    });
   };
 
   return (
@@ -69,7 +116,7 @@ export const Horario = () => {
               className='border px-3 py-2 rounded-lg bg-white'
             />
           </div>
-          <button type="submit" className='border px-3 py-2 rounded-lg bg-[#237FFF]' >Agregar Horario</button>
+          <button type="submit" className='border px-3 py-2 rounded-lg bg-[#237FFF]'>Agregar Horario</button>
         </form>
         <div className="max-h-[500px] overflow-y-auto">
           <table className="table border border-gray-400 m-2 mx-auto">
@@ -80,6 +127,7 @@ export const Horario = () => {
                 <th className='text-center'>Cliente</th>
                 <th className='text-center'>Medio de pago</th>
                 <th className='text-center'>Reservado</th>
+                <th className='text-center'>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -89,7 +137,20 @@ export const Horario = () => {
                   <td className='text-center'>{h.hora}</td>
                   <td className='text-center'>{h.cliente ? h.cliente : '-'}</td>
                   <td className='text-center'>{h.medioDePago ? h.medioDePago : '-'}</td>
-                  <td className={`text-center`}><div className={`${h.reservado ? 'bg-red-400' : 'bg-green-600'} font-bold w-8/12 rounded-lg mx-auto`}>{h.reservado ? 'Si' : 'No'}</div></td>
+                  <td className={`text-center`}>
+                    <div className={`${h.reservado ? 'bg-red-400' : 'bg-green-600'} font-bold w-8/12 rounded-lg mx-auto`}>
+                      {h.reservado ? 'Si' : 'No'}
+                    </div>
+                  </td>
+                  <td className='text-center'>
+                    <button
+                      className={`border px-2 py-1 rounded-lg ${h.reservado ? 'bg-red-500' : 'bg-gray-400'} text-white`}
+                      onClick={() => handleCancelarReserva(h)}
+                      disabled={!h.reservado}
+                    >
+                      Cancelar
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

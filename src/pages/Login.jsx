@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react'
 import { AuthContext } from '../context/AuthContext';
 import { Navigate, redirect } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
+import Swal from 'sweetalert2';
 
 export const Login = () => {
   const { login } = useContext(AuthContext);
@@ -24,7 +25,18 @@ export const Login = () => {
       method:'POST',
       body:JSON.stringify(credenciales)
 
-    }).then(res=>res.json()).then(data=> login(data))
+    }).then(res=>res.json()).then(data=>{
+      if(data.error){
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data.error,
+        });
+      }else{
+        login(data)
+      }
+      
+      })
 
   }
   return (

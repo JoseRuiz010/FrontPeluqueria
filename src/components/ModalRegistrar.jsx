@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2'; 
 import mediosDePago from '../config/mediosDepago';
 
 const Modal = ({ isOpen, onClose, turnoSelected }) => {
@@ -6,7 +7,7 @@ const Modal = ({ isOpen, onClose, turnoSelected }) => {
   const [medioDePago, setMedioDePago] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const isFormValid = nombre !== '' && medioDePago !== '';
 
   const handleNombreChange = (e) => {
@@ -21,7 +22,7 @@ const Modal = ({ isOpen, onClose, turnoSelected }) => {
     if (isFormValid) {
       setLoading(true);
       setError('');
-      
+
       const data = {
         fecha: turnoSelected.fecha,
         hora: turnoSelected.hora,
@@ -44,16 +45,32 @@ const Modal = ({ isOpen, onClose, turnoSelected }) => {
 
         const result = await response.json();
         console.log('Turno reservado:', result);
+
+        // Mostrar alerta de éxito
+        Swal.fire({
+          icon: 'success',
+          title: 'Reserva exitosa',
+          text: 'El turno ha sido reservado correctamente.',
+        });
+
         onClose();
       } catch (error) {
         setError(error.message);
         console.error('Error:', error);
+
+        // Mostrar alerta de error
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message,
+        });
       } finally {
         setLoading(false);
+        setNombre('');
+        setMedioDePago('');
       }
     }
   };
-
 
   if (!isOpen) return null;
 
